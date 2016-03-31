@@ -169,7 +169,11 @@ public class AllureReporter implements Reporter, Formatter {
     @Override
     public void endOfScenarioLifeCycle(Scenario scenario) {
         lifecycle.fire(new TestCaseFinishedEvent());
-        this.gherkinSteps.clear();
+
+        while (gherkinSteps.peek() != null){
+            fireCanceledStep(gherkinSteps.remove());
+        }
+
         this.accessedSteps.clear();
     }
 
@@ -223,20 +227,14 @@ public class AllureReporter implements Reporter, Formatter {
 
             if (isEqualSteps(step, gherkinSteps.peek())) {
                 accessedSteps.add(gherkinSteps.remove());
-            } else if (!accessedSteps.contains(step) && gherkinSteps.peek() != null && !isEqualSteps(step, gherkinSteps.peek())) {
-                String name = gherkinSteps.remove().getName();
-                lifecycle.fire(new StepStartedEvent(name).withTitle(name));
-                lifecycle.fire(new StepCanceledEvent());
-                lifecycle.fire(new StepFinishedEvent());
-                lifecycle.fire(new TestCaseCanceledEvent());
+            } else while (!accessedSteps.contains(step) && gherkinSteps.peek() != null && !isEqualSteps(step, gherkinSteps.peek())) {
+                fireCanceledStep(gherkinSteps.remove());
             }
 
             String name = this.match.getStepLocation().getMethodName();
             lifecycle.fire(new StepStartedEvent(name).withTitle(name));
         }
     }
-
-
 
     @Override
     public void embedding(String mimeType, byte[] data) {
@@ -290,6 +288,14 @@ public class AllureReporter implements Reporter, Formatter {
             }
         }
         return level;
+    }
+
+    private void fireCanceledStep(Step unimplementedStep) {
+        String name = unimplementedStep.getName();
+        lifecycle.fire(new StepStartedEvent(name).withTitle(name));
+        lifecycle.fire(new StepCanceledEvent());
+        lifecycle.fire(new StepFinishedEvent());
+        lifecycle.fire(new TestCaseCanceledEvent());
     }
 
     private Description getDescriptionAnnotation(final String description){
