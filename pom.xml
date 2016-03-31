@@ -7,6 +7,32 @@
     <groupId>ru.yandex.qatools.allure</groupId>
     <artifactId>allure-cucumber-plugin</artifactId>
     <version>1.0-SNAPSHOT</version>
+    <packaging>jar</packaging>
+
+    <name>${project.groupId}:${project.artifactId}</name>
+
+    <licenses>
+        <license>
+            <name>The Apache License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <name>Igor Seliverstov</name>
+            <email>gvvinblade@gmail.com</email>
+        </developer>
+    </developers>
+
+    <description>A Cucumber plugin that helps to integrate Allure reporting to a Cucumber project</description>
+    <url>http://allure.qatools.ru/</url>
+
+    <scm>
+        <url>https://github.com/kirlionik/allure-cucumber-maven-plugin</url>
+        <connection>scm:git:git@github.com:kirlionik/allure-cucumber-maven-plugin.git</connection>
+        <developerConnection>scm:git:git@github.com:kirlionik/allure-cucumber-maven-plugin.git</developerConnection>
+    </scm>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
