@@ -13,8 +13,8 @@ import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import cucumber.runtime.StepDefinitionMatch;
 import gherkin.formatter.Formatter;
@@ -57,7 +57,7 @@ public class AllureReporter implements Reporter, Formatter {
     private static final String FAILED = "failed";
     private static final String SKIPPED = "skipped";
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(AllureReporter.class);
+    private static final Log LOG = LogFactory.getLog(AllureReporter.class);
 
     private final Allure lifecycle = Allure.LIFECYCLE;
 
@@ -255,6 +255,7 @@ public class AllureReporter implements Reporter, Formatter {
             return (Step) step.get(match);
         } catch (ReflectiveOperationException e) {
             //shouldn't ever happen
+            LOG.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
     }
@@ -279,7 +280,7 @@ public class AllureReporter implements Reporter, Formatter {
                 try {
                     levelTmp = SeverityLevel.fromValue(levelString.toLowerCase());
                 } catch (IllegalArgumentException e) {
-                    LOGGER.warn("Unexpected Severity level {}. SeverityLevel.NORMAL will be used instead", levelString);
+                    LOG.warn(String.format("Unexpected Severity level [%s]. SeverityLevel.NORMAL will be used instead", levelString));
                     levelTmp = SeverityLevel.NORMAL;
                 }
 
