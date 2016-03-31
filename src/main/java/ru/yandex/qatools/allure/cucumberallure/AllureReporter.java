@@ -168,11 +168,12 @@ public class AllureReporter implements Reporter, Formatter {
 
     @Override
     public void endOfScenarioLifeCycle(Scenario scenario) {
-        lifecycle.fire(new TestCaseFinishedEvent());
 
         while (gherkinSteps.peek() != null){
             fireCanceledStep(gherkinSteps.remove());
         }
+
+        lifecycle.fire(new TestCaseFinishedEvent());
 
         this.accessedSteps.clear();
     }
