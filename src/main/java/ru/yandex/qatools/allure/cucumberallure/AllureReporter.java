@@ -225,10 +225,12 @@ public class AllureReporter implements Reporter, Formatter {
 
             Step step = extractStep(this.match);
 
+            while (!accessedSteps.contains(step) && gherkinSteps.peek() != null && !isEqualSteps(step, gherkinSteps.peek())) {
+                fireCanceledStep(gherkinSteps.remove());
+            }
+
             if (isEqualSteps(step, gherkinSteps.peek())) {
                 accessedSteps.add(gherkinSteps.remove());
-            } else while (!accessedSteps.contains(step) && gherkinSteps.peek() != null && !isEqualSteps(step, gherkinSteps.peek())) {
-                fireCanceledStep(gherkinSteps.remove());
             }
 
             String name = this.match.getStepLocation().getMethodName();
