@@ -23,6 +23,10 @@
             <name>Igor Seliverstov</name>
             <email>gvvinblade@gmail.com</email>
         </developer>
+        <developer>
+            <name>Anton Shapin</name>
+            <email>shapin.anton@gmail.com</email>
+        </developer>
     </developers>
 
     <description>A Cucumber plugin that helps to integrate Allure reporting to a Cucumber project</description>
