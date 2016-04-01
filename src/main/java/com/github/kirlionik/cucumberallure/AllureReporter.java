@@ -9,6 +9,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Queue;
+import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -21,6 +22,7 @@ import gherkin.formatter.Formatter;
 import gherkin.formatter.Reporter;
 import gherkin.formatter.model.Background;
 import gherkin.formatter.model.Examples;
+import gherkin.formatter.model.ExamplesTableRow;
 import gherkin.formatter.model.Feature;
 import gherkin.formatter.model.Match;
 import gherkin.formatter.model.Result;
@@ -56,6 +58,7 @@ public class AllureReporter implements Reporter, Formatter {
 
     private static final String FAILED = "failed";
     private static final String SKIPPED = "skipped";
+    private static final String PASSED = "passed";
 
     private static final Log LOG = LogFactory.getLog(AllureReporter.class);
 
@@ -68,10 +71,10 @@ public class AllureReporter implements Reporter, Formatter {
     private Feature feature;
     private StepDefinitionMatch match;
 
-    private Queue<Step> gherkinSteps = new LinkedList<>();
-    private List<Step> accessedSteps = new LinkedList<>();
+    private LinkedList<Step> gherkinSteps = new LinkedList<>();
 
     private String uid;
+    private String currentStatus;
 
     //to avoid duplicate names of attachments and messages
     private long counter = 0;
@@ -91,6 +94,7 @@ public class AllureReporter implements Reporter, Formatter {
         this.feature = feature;
 
         uid = UUID.randomUUID().toString();
+        currentStatus = PASSED;
 
         TestSuiteStartedEvent event = new TestSuiteStartedEvent(uid, feature.getName());
 
@@ -163,6 +167,13 @@ public class AllureReporter implements Reporter, Formatter {
 
     @Override
     public void step(Step step) {
+        if(isExampleStep(step)){
+            for (Step gherkinStep : new ArrayList<>(gherkinSteps)) {
+                if(isEqualSteps(step, gherkinStep)){
+                    gherkinSteps.remove(gherkinStep);
+                }
+            }
+        }
         gherkinSteps.add(step);
     }
 
@@ -174,8 +185,6 @@ public class AllureReporter implements Reporter, Formatter {
         }
 
         lifecycle.fire(new TestCaseFinishedEvent());
-
-        this.accessedSteps.clear();
     }
 
     @Override
@@ -205,8 +214,14 @@ public class AllureReporter implements Reporter, Formatter {
             if (FAILED.equals(result.getStatus())) {
                 lifecycle.fire(new StepFailureEvent().withThrowable(result.getError()));
                 lifecycle.fire(new TestCaseFailureEvent().withThrowable(result.getError()));
+                currentStatus = FAILED;
             } else if(SKIPPED.equals(result.getStatus())){
                 lifecycle.fire(new StepCanceledEvent());
+                if (PASSED.equals(currentStatus)) {
+                    //not to change FAILED status to CANCELED in the report
+                    lifecycle.fire(new TestCaseCanceledEvent());
+                    currentStatus = SKIPPED;
+                }
             }
             lifecycle.fire(new StepFinishedEvent());
             match = null;
@@ -226,12 +241,12 @@ public class AllureReporter implements Reporter, Formatter {
 
             Step step = extractStep(this.match);
 
-            while (!accessedSteps.contains(step) && gherkinSteps.peek() != null && !isEqualSteps(step, gherkinSteps.peek())) {
+            while (gherkinSteps.peek() != null && !isEqualSteps(step, gherkinSteps.peek())) {
                 fireCanceledStep(gherkinSteps.remove());
             }
 
             if (isEqualSteps(step, gherkinSteps.peek())) {
-                accessedSteps.add(gherkinSteps.remove());
+                gherkinSteps.remove();
             }
 
             String name = this.match.getStepLocation().getMethodName();
@@ -298,7 +313,20 @@ public class AllureReporter implements Reporter, Formatter {
         lifecycle.fire(new StepStartedEvent(name).withTitle(name));
         lifecycle.fire(new StepCanceledEvent());
         lifecycle.fire(new StepFinishedEvent());
-        lifecycle.fire(new TestCaseCanceledEvent());
+        if (PASSED.equals(currentStatus)) {
+            //not to change FAILED status to CANCELED in the report
+            lifecycle.fire(new TestCaseCanceledEvent(){
+                @Override
+                protected String getMessage() {
+                    return "Unimplemented steps were found";
+                }
+            });
+            currentStatus = SKIPPED;
+        }
+    }
+
+    private boolean isExampleStep(Step step) {
+        return step.getClass().getName().endsWith("ExampleStep");
     }
 
     private Description getDescriptionAnnotation(final String description){
