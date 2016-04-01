@@ -1,4 +1,4 @@
-package ru.yandex.qatools.allure.cucumberallure;
+package com.github.kirlionik.cucumberallure;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
