@@ -56,6 +56,8 @@ import ru.yandex.qatools.allure.utils.AnnotationManager;
 
 public class AllureReporter implements Reporter, Formatter {
 
+    private static final String SCENARIO_OUTLINE_KEYWORD = "Scenario Outline";
+
     private static final String FAILED = "failed";
     private static final String SKIPPED = "skipped";
     private static final String PASSED = "passed";
@@ -94,7 +96,6 @@ public class AllureReporter implements Reporter, Formatter {
         this.feature = feature;
 
         uid = UUID.randomUUID().toString();
-        currentStatus = PASSED;
 
         TestSuiteStartedEvent event = new TestSuiteStartedEvent(uid, feature.getName());
 
@@ -119,6 +120,13 @@ public class AllureReporter implements Reporter, Formatter {
 
     @Override
     public void startOfScenarioLifeCycle(Scenario scenario) {
+
+        //to avoid duplicate steps in case of Scenario Outline
+        if(SCENARIO_OUTLINE_KEYWORD.equals(scenario.getKeyword())){
+            gherkinSteps.clear();
+        }
+
+        currentStatus = PASSED;
 
         TestCaseStartedEvent event = new TestCaseStartedEvent(uid, scenario.getName());
         event.setTitle(scenario.getName());
@@ -167,13 +175,6 @@ public class AllureReporter implements Reporter, Formatter {
 
     @Override
     public void step(Step step) {
-        if(isExampleStep(step)){
-            for (Step gherkinStep : new ArrayList<>(gherkinSteps)) {
-                if(isEqualSteps(step, gherkinStep)){
-                    gherkinSteps.remove(gherkinStep);
-                }
-            }
-        }
         gherkinSteps.add(step);
     }
 
@@ -323,10 +324,6 @@ public class AllureReporter implements Reporter, Formatter {
             });
             currentStatus = SKIPPED;
         }
-    }
-
-    private boolean isExampleStep(Step step) {
-        return step.getClass().getName().endsWith("ExampleStep");
     }
 
     private Description getDescriptionAnnotation(final String description){
