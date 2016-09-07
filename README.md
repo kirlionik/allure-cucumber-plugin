@@ -5,4 +5,4 @@ Maven plugin for generation Cucumber [Allure](http://allure.qatools.ru/) Report
 ## Getting Started
 * [Documentation](https://github.com/kirlionik/allure-cucumber-plugin/wiki)
 * [Example Maven Project] (https://github.com/kirlionik/cucumber-allure-plugin-examples)
-* [Example Gradle Project] (https://github.com/kirlionik/cucumber-allure-plugin-examples)
+* [Example Gradle Project] (https://github.com/kirlionik/cucumber-allure-plugin-gradle-examples)
