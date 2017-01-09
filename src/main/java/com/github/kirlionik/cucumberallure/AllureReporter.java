@@ -8,12 +8,11 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
-import java.util.Queue;
-import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import gherkin.I18n;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -22,7 +21,6 @@ import gherkin.formatter.Formatter;
 import gherkin.formatter.Reporter;
 import gherkin.formatter.model.Background;
 import gherkin.formatter.model.Examples;
-import gherkin.formatter.model.ExamplesTableRow;
 import gherkin.formatter.model.Feature;
 import gherkin.formatter.model.Match;
 import gherkin.formatter.model.Result;
@@ -56,7 +54,7 @@ import ru.yandex.qatools.allure.utils.AnnotationManager;
 
 public class AllureReporter implements Reporter, Formatter {
 
-    private static final String SCENARIO_OUTLINE_KEYWORD = "Scenario Outline";
+    private static final List<String> SCENARIO_OUTLINE_KEYWORDS = new ArrayList<>();
 
     private static final String FAILED = "failed";
     private static final String SKIPPED = "skipped";
@@ -80,6 +78,14 @@ public class AllureReporter implements Reporter, Formatter {
 
     //to avoid duplicate names of attachments and messages
     private long counter = 0;
+
+    public AllureReporter() {
+        List<I18n> i18nList = I18n.getAll();
+
+        for (I18n i18n : i18nList) {
+            SCENARIO_OUTLINE_KEYWORDS.addAll(i18n.keywords("scenario_outline"));
+        }
+    }
 
     @Override
     public void syntaxError(String state, String event, List<String> legalEvents, String uri, Integer line) {
@@ -122,7 +128,7 @@ public class AllureReporter implements Reporter, Formatter {
     public void startOfScenarioLifeCycle(Scenario scenario) {
 
         //to avoid duplicate steps in case of Scenario Outline
-        if(SCENARIO_OUTLINE_KEYWORD.equals(scenario.getKeyword())){
+        if (SCENARIO_OUTLINE_KEYWORDS.contains(scenario.getKeyword())) {
             gherkinSteps.clear();
         }
 
