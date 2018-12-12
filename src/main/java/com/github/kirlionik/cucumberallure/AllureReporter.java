@@ -13,6 +13,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import gherkin.I18n;
+import gherkin.formatter.model.DataTableRow;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -37,6 +38,7 @@ import ru.yandex.qatools.allure.annotations.Severity;
 import ru.yandex.qatools.allure.annotations.Stories;
 import ru.yandex.qatools.allure.annotations.TestCaseId;
 import ru.yandex.qatools.allure.config.AllureModelUtils;
+import ru.yandex.qatools.allure.events.AddParameterEvent;
 import ru.yandex.qatools.allure.events.MakeAttachmentEvent;
 import ru.yandex.qatools.allure.events.StepCanceledEvent;
 import ru.yandex.qatools.allure.events.StepFailureEvent;
@@ -49,6 +51,7 @@ import ru.yandex.qatools.allure.events.TestCaseStartedEvent;
 import ru.yandex.qatools.allure.events.TestSuiteFinishedEvent;
 import ru.yandex.qatools.allure.events.TestSuiteStartedEvent;
 import ru.yandex.qatools.allure.model.DescriptionType;
+import ru.yandex.qatools.allure.model.ParameterKind;
 import ru.yandex.qatools.allure.model.SeverityLevel;
 import ru.yandex.qatools.allure.utils.AnnotationManager;
 
@@ -258,6 +261,7 @@ public class AllureReporter implements Reporter, Formatter {
 
             String name = this.match.getStepLocation().getMethodName();
             lifecycle.fire(new StepStartedEvent(name).withTitle(name));
+            addStepRowsToReport(step);
         }
     }
 
@@ -280,6 +284,21 @@ public class AllureReporter implements Reporter, Formatter {
             //shouldn't ever happen
             LOG.error(e.getMessage(), e);
             throw new RuntimeException(e);
+        }
+    }
+
+    private void addStepRowsToReport(Step step) {
+        if (step.getRows() != null) {
+            List<DataTableRow> rows = step.getRows();
+            StringBuilder sb = new StringBuilder();
+            for (DataTableRow row : rows) {
+                String value = row.getCells().toString()
+                        .replace("[", "| ")
+                        .replace("]", " |\n\r")
+                        .replace(",", " |");
+                sb.append(value);
+            }
+            lifecycle.fire(new MakeAttachmentEvent(sb.toString().getBytes(), "Step rows", "text/plain"));
         }
     }
 
