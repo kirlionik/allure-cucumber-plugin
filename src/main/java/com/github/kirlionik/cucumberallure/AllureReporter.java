@@ -300,7 +300,7 @@ public class AllureReporter implements Reporter, Formatter {
                     "  padding: 8px;\n" +
                     "}\n" +
                     "\n" +
-                    "tr:nth-child(even) {\n" +
+                    "tr:nth-child(odd) {\n" +
                     "  background-color: #dddddd;\n" +
                     "}\n" +
                     "</style>");
