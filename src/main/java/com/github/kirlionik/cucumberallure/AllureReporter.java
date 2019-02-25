@@ -38,7 +38,6 @@ import ru.yandex.qatools.allure.annotations.Severity;
 import ru.yandex.qatools.allure.annotations.Stories;
 import ru.yandex.qatools.allure.annotations.TestCaseId;
 import ru.yandex.qatools.allure.config.AllureModelUtils;
-import ru.yandex.qatools.allure.events.AddParameterEvent;
 import ru.yandex.qatools.allure.events.MakeAttachmentEvent;
 import ru.yandex.qatools.allure.events.StepCanceledEvent;
 import ru.yandex.qatools.allure.events.StepFailureEvent;
@@ -51,7 +50,6 @@ import ru.yandex.qatools.allure.events.TestCaseStartedEvent;
 import ru.yandex.qatools.allure.events.TestSuiteFinishedEvent;
 import ru.yandex.qatools.allure.events.TestSuiteStartedEvent;
 import ru.yandex.qatools.allure.model.DescriptionType;
-import ru.yandex.qatools.allure.model.ParameterKind;
 import ru.yandex.qatools.allure.model.SeverityLevel;
 import ru.yandex.qatools.allure.utils.AnnotationManager;
 
@@ -144,20 +142,19 @@ public class AllureReporter implements Reporter, Formatter {
 
         SeverityLevel level = getSeverityLevel(scenario);
 
-        if(level != null){
+        if (level != null) {
             annotations.add(getSeverityAnnotation(level));
         }
 
         Issues issues = getIssuesAnnotation(scenario);
-        if(issues != null){
+        if (issues != null) {
             annotations.add(issues);
         }
 
         TestCaseId testCaseId = getTestCaseIdAnnotation(scenario);
-        if(testCaseId != null){
+        if (testCaseId != null) {
             annotations.add(testCaseId);
         }
-
 
 
         annotations.add(getFeaturesAnnotation(feature.getName()));
@@ -190,7 +187,7 @@ public class AllureReporter implements Reporter, Formatter {
     @Override
     public void endOfScenarioLifeCycle(Scenario scenario) {
 
-        while (gherkinSteps.peek() != null){
+        while (gherkinSteps.peek() != null) {
             fireCanceledStep(gherkinSteps.remove());
         }
 
@@ -225,7 +222,7 @@ public class AllureReporter implements Reporter, Formatter {
                 lifecycle.fire(new StepFailureEvent().withThrowable(result.getError()));
                 lifecycle.fire(new TestCaseFailureEvent().withThrowable(result.getError()));
                 currentStatus = FAILED;
-            } else if(SKIPPED.equals(result.getStatus())){
+            } else if (SKIPPED.equals(result.getStatus())) {
                 lifecycle.fire(new StepCanceledEvent());
                 if (PASSED.equals(currentStatus)) {
                     //not to change FAILED status to CANCELED in the report
@@ -290,15 +287,34 @@ public class AllureReporter implements Reporter, Formatter {
     private void addStepRowsToReport(Step step) {
         if (step.getRows() != null) {
             List<DataTableRow> rows = step.getRows();
-            StringBuilder sb = new StringBuilder();
+            StringBuilder sb = new StringBuilder("<style>\n" +
+                    "table {\n" +
+                    "  font-family: arial, sans-serif;\n" +
+                    "  border-collapse: collapse;\n" +
+                    "  width: 100%;\n" +
+                    "}\n" +
+                    "\n" +
+                    "td {\n" +
+                    "  border: 0px solid #dddddd;\n" +
+                    "  text-align: left;\n" +
+                    "  padding: 8px;\n" +
+                    "}\n" +
+                    "\n" +
+                    "tr:nth-child(even) {\n" +
+                    "  background-color: #dddddd;\n" +
+                    "}\n" +
+                    "</style>");
+            sb.append("<table>");
             for (DataTableRow row : rows) {
-                String value = row.getCells().toString()
-                        .replace("[", "| ")
-                        .replace("]", " |\n\r")
-                        .replace(",", " |");
-                sb.append(value);
+                for (String cell : row.getCells()) {
+                    sb.append("<td>")
+                            .append(cell)
+                            .append("</td>");
+                }
+                sb.append("</tr>");
             }
-            lifecycle.fire(new MakeAttachmentEvent(sb.toString().getBytes(), "Step rows", "text/plain"));
+            sb.append("</table>");
+            lifecycle.fire(new MakeAttachmentEvent(sb.toString().getBytes(), "Data Table", "text/html"));
         }
     }
 
@@ -316,7 +332,7 @@ public class AllureReporter implements Reporter, Formatter {
                 SeverityLevel.TRIVIAL);
         for (Tag tag : scenario.getTags()) {
             Matcher matcher = severityPattern.matcher(tag.getName());
-            if(matcher.matches()){
+            if (matcher.matches()) {
                 SeverityLevel levelTmp;
                 String levelString = matcher.group(1);
                 try {
@@ -326,7 +342,7 @@ public class AllureReporter implements Reporter, Formatter {
                     levelTmp = SeverityLevel.NORMAL;
                 }
 
-                if(level == null || severityLevels.indexOf(levelTmp) < severityLevels.indexOf(level)){
+                if (level == null || severityLevels.indexOf(levelTmp) < severityLevels.indexOf(level)) {
                     level = levelTmp;
                 }
             }
@@ -341,7 +357,7 @@ public class AllureReporter implements Reporter, Formatter {
         lifecycle.fire(new StepFinishedEvent());
         if (PASSED.equals(currentStatus)) {
             //not to change FAILED status to CANCELED in the report
-            lifecycle.fire(new TestCaseCanceledEvent(){
+            lifecycle.fire(new TestCaseCanceledEvent() {
                 @Override
                 protected String getMessage() {
                     return "Unimplemented steps were found";
@@ -351,8 +367,8 @@ public class AllureReporter implements Reporter, Formatter {
         }
     }
 
-    private Description getDescriptionAnnotation(final String description){
-        return new Description(){
+    private Description getDescriptionAnnotation(final String description) {
+        return new Description() {
             @Override
             public String value() {
                 return description;
@@ -419,14 +435,14 @@ public class AllureReporter implements Reporter, Formatter {
         List<String> issues = new ArrayList<>();
         for (Tag tag : scenario.getTags()) {
             Matcher matcher = issuePattern.matcher(tag.getName());
-            if(matcher.matches()){
+            if (matcher.matches()) {
                 issues.add(matcher.group(1));
             }
         }
-        return issues.size() > 0 ? getIssuesAnnotation(issues): null;
+        return issues.size() > 0 ? getIssuesAnnotation(issues) : null;
     }
 
-    private Issues getIssuesAnnotation(List<String> issues){
+    private Issues getIssuesAnnotation(List<String> issues) {
         final Issue[] values = createIssuesArray(issues);
         return new Issues() {
             @Override
@@ -463,7 +479,7 @@ public class AllureReporter implements Reporter, Formatter {
     private TestCaseId getTestCaseIdAnnotation(Scenario scenario) {
         for (Tag tag : scenario.getTags()) {
             Matcher matcher = testCaseIdPattern.matcher(tag.getName());
-            if(matcher.matches()){
+            if (matcher.matches()) {
                 final String testCaseId = matcher.group(1);
                 return new TestCaseId() {
                     @Override
